@@ -11,7 +11,7 @@ WORKDIR /app
 COPY package*.json ./
 RUN npm install
 
-# Copy app code
+# Copy the rest of the app code
 COPY . .
 
 # Make wait.sh executable
@@ -20,5 +20,5 @@ RUN chmod +x wait.sh
 # Expose backend port
 EXPOSE 4000
 
-# Default command: run wait.sh
+# Default command: run wait.sh to wait for MySQL before starting backend
 CMD ["bash", "./wait.sh"]

@@ -1,57 +1,38 @@
 version: '3.8'
 
 services:
-  frontend:
-    build: ./application-code/web-tier        #  Make sure your React app is actually inside this folder
-    container_name: web-tier
-    ports:
-      - "3000:80"
-    depends_on:
-      - backend
-    environment:
-      - REACT_APP_BACKEND_URL=${REACT_APP_BACKEND_URL}
-    networks:
-      - app-network
 
-  backend:
-    build: ./application-code/app-tier      #  Points to your Node.js backend folder
+  # Backend service
+  app-tier:
+    build:
+      context: ./application-code/app-tier
+      dockerfile: Dockerfile
     container_name: app-tier
-    ports:
-      - "4000:4000"
-    env_file:
-      - ./application-code/app-tier/.env        #  This should contain your backend DB credentials
-    depends_on:
-      - mysql_db
-    networks:
-      - app-network
-    
-  mysql_db:
-    image: mysql:8.0
-    container_name: mysql_db
-    restart: always
-    env_file:
-      - ./application-code/app-tier/.env
     environment:
-      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
-      MYSQL_DATABASE: ${MYSQL_DATABASE}
-      MYSQL_USER: ${MYSQL_USER}
-      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
-    command: --default-authentication-plugin=mysql_native_password
+      DB_HOST: ${DB_HOST}          # RDS endpoint
+      DB_USER: ${DB_USER}          # RDS username
+      DB_PASSWORD: ${DB_PASSWORD}  # RDS password
+      DB_DATABASE: ${DB_DATABASE}  # RDS database name
+      DB_PORT: ${DB_PORT}          # usually 3306
+      PORT: 4000
+    expose:
+      - "4000"                     # only available inside Docker network
+    restart: unless-stopped
+
+  # Frontend service (React app served by Nginx inside the container)
+  web-tier:
+    build:
+      context: ./application-code/web-tier
+      dockerfile: Dockerfile
+    container_name: web-tier
+    depends_on:
+      - app-tier
     ports:
-       - "3307:3306"
-    volumes:
-      - mysql_data:/var/lib/mysql
-    networks:
-      - app-network
-    healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
-      interval: 10s
-      retries: 5
-      start_period: 30s
+      - "80:80"                     # publicly accessible
+    environment:
+      - REACT_APP_BACKEND_URL=http://app-tier:4000
+    restart: unless-stopped
 
 networks:
-  app-network:
+  default:
     driver: bridge
-
-volumes:
-  mysql_data:

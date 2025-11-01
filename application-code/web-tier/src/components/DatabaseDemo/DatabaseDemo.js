@@ -1,134 +1,11 @@
-
-    // import React, {Component} from 'react';
-    // import './DatabaseDemo.css';
-
-    // class DatabaseDemo extends Component {
-     
-    //     constructor(props) {
-    //         super(props) //since we are extending class Table so we have to use super in order to override Component class constructor
-    //         this.handleTextChange = this.handleTextChange.bind(this);
-    //         this.handleButtonClick = this.handleButtonClick.bind(this);
-    //         this.handleButtonClickDel = this.handleButtonClickDel.bind(this);
-    //         this.state = { 
-    //            transactions: [],
-    //            text_amt: "",
-    //            text_desc:""
-    //         }
-    //      }
-
-    //      componentDidMount() {
-    //         this.populateData();
-    //       }
-
-    //     populateData(){
-    //         this.fetch_retry('http://localhost:4000/transaction',3)
-    //         .then(res => res.json())
-    //         .then((data) => {
-    //           this.setState({ transactions : data.data });
-    //           console.log("state set");
-    //           console.log(this.state.transactions);
-    //         })
-    //         .catch(console.log);
-    //     }  
-
-    //     async fetch_retry(url, n){
-    //         try {
-    //             return await fetch(url)
-    //         } catch(err) {
-    //             if (n === 1) throw err;
-    //             await new Promise(resolve => setTimeout(resolve, 1000)); 
-    //             return await this.fetch_retry(url, n - 1);
-    //         }
-    //     };
-
-
-    //       renderTableData() {
-    //         return this.state.transactions.map((transaction, index) => {
-    //            const { id, amount, description} = transaction //destructuring
-    //            return (
-    //               <tr key={id}>
-    //                  <td>{id}</td>
-    //                  <td>{amount}</td>
-    //                  <td>{description}</td>
-    //               </tr>
-    //            )
-    //         })
-    //      }
-
-    //     handleButtonClickDel(){
-    //        const requestOptions = {
-    //            method: 'DELETE'
-    //        }
-    //        fetch('http://localhost:4000/transaction', requestOptions)
-    //        .then(response => response.json())
-    //        .then(data => this.populateData())
-
-    //        this.setState({text_amt : "", text_desc:"",transaction:[]});
-
-    //     }
-
-    //      handleButtonClick(){
-    //          console.log(this.state.text_amt);
-    //          console.log(this.state.text_desc);
-    //         const requestOptions = {
-    //             method: 'POST',
-    //             headers: {'Content-Type':'application/json'},
-    //             body: JSON.stringify({"amount":this.state.text_amt, "desc" :this.state.text_desc})
-    //         }
-            
-    //         fetch('http://localhost:4000/transaction', requestOptions)
-    //         .then(response => response.json())
-    //         .then(data => this.populateData())
-            
-    //         this.setState({text_amt : "", text_desc:""});
-
-    //      }
-
-    //      handleTextChange(e){
-    //         this.setState({[e.target.name]:e.target.value})
-    //      }
-
-
-    //     render () {
-    //     return (
-    //         <div>
-    //         <h1 id='title' style={{paddingRight:"1em"}}>Aurora Database Demo Page</h1><input style={{float:"right", marginBottom:"1em"}} type = "button" value ="DEL" onClick={this.handleButtonClickDel} />
-    //         <table id='transactions'>
-    //            <tbody>
-    //                <tr>
-    //                    <td>ID</td>
-    //                    <td>AMOUNT</td>
-    //                    <td>DESC</td>
-    //                </tr>
-    //                <tr>
-    //                     <td><input type = "button" value ="ADD" onClick={this.handleButtonClick}/></td>
-    //                     <td><input type="text" name ="text_amt" value = {this.state.text_amt} onChange={this.handleTextChange}/></td>
-    //                     <td><input type="text" name = "text_desc" value = {this.state.text_desc} onChange={this.handleTextChange}/></td>
-    //                </tr>
-    //               {this.renderTableData()}
-    //            </tbody>
-    //         </table>
-    //      </div>
-
-    //     );
-    //   }
-    // }
-
-    // export default DatabaseDemo;
-
-
-    import React, { Component } from 'react';
+import React, { Component } from 'react';
 import './DatabaseDemo.css';
 
 class DatabaseDemo extends Component {
-  // ✅ Add this at the very top inside the class
   backendUrl = process.env.REACT_APP_BACKEND_URL || 'http://localhost:4000';
 
   constructor(props) {
     super(props);
-    this.handleTextChange = this.handleTextChange.bind(this);
-    this.handleButtonClick = this.handleButtonClick.bind(this);
-    this.handleButtonClickDel = this.handleButtonClickDel.bind(this);
     this.state = {
       transactions: [],
       text_amt: "",
@@ -140,77 +17,74 @@ class DatabaseDemo extends Component {
     this.populateData();
   }
 
-  populateData() {
-    this.fetch_retry(`${this.backendUrl}/transaction`, 3)
-      .then(res => res.json())
-      .then((data) => {
-        // ✅ FIX: safely handle both data.result and data.data
-        const transactions = data.result || data.data || [];
-        this.setState({ transactions });
-        console.log("state set:", transactions);
-      })
-      .catch(console.log);
-  }
-
-  async fetch_retry(url, n) {
+  async fetchRetry(url, n) {
     try {
-      return await fetch(url);
+      const res = await fetch(url);
+      return res;
     } catch (err) {
       if (n === 1) throw err;
       await new Promise(resolve => setTimeout(resolve, 1000));
-      return await this.fetch_retry(url, n - 1);
+      return this.fetchRetry(url, n - 1);
+    }
+  }
+
+  async populateData() {
+    try {
+      const res = await this.fetchRetry(`${this.backendUrl}/transaction`, 3);
+      const data = await res.json();
+      const transactions = data.result || data.data || [];
+      this.setState({ transactions });
+      console.log("state set:", transactions);
+    } catch (err) {
+      console.error("Failed to fetch transactions:", err);
+    }
+  }
+
+  handleTextChange = (e) => {
+    this.setState({ [e.target.name]: e.target.value });
+  }
+
+  handleButtonClickDel = async () => {
+    try {
+      await fetch(`${this.backendUrl}/transaction`, { method: 'DELETE' });
+      this.setState({ text_amt: "", text_desc: "", transactions: [] });
+      this.populateData();
+    } catch (err) {
+      console.error("Failed to delete transactions:", err);
+    }
+  }
+
+  handleButtonClick = async () => {
+    const { text_amt, text_desc } = this.state;
+    try {
+      await fetch(`${this.backendUrl}/transaction`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ amount: text_amt, desc: text_desc })
+      });
+      this.setState({ text_amt: "", text_desc: "" });
+      this.populateData();
+    } catch (err) {
+      console.error("Failed to add transaction:", err);
     }
   }
 
   renderTableData() {
-    // ✅ FIX: safely handle when transactions is undefined or empty
     const { transactions } = this.state;
     if (!Array.isArray(transactions)) return null;
 
-    return transactions.map((transaction) => {
-      const { id, amount, description } = transaction;
-      return (
-        <tr key={id}>
-          <td>{id}</td>
-          <td>{amount}</td>
-          <td>{description}</td>
-        </tr>
-      );
-    });
-  }
-
-  handleButtonClickDel() {
-    const requestOptions = { method: 'DELETE' };
-    fetch(`${this.backendUrl}/transaction`, requestOptions)
-
-      .then(response => response.json())
-      .then(() => this.populateData());
-
-    this.setState({ text_amt: "", text_desc: "", transactions: [] });
-  }
-
-  handleButtonClick() {
-    const requestOptions = {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        amount: this.state.text_amt,
-        desc: this.state.text_desc
-      })
-    };
-
-    fetch(`${this.backendUrl}/transaction`, requestOptions)
-      .then(response => response.json())
-      .then(() => this.populateData());
-
-    this.setState({ text_amt: "", text_desc: "" });
-  }
-
-  handleTextChange(e) {
-    this.setState({ [e.target.name]: e.target.value });
+    return transactions.map(({ id, amount, description }) => (
+      <tr key={id}>
+        <td>{id}</td>
+        <td>{amount}</td>
+        <td>{description}</td>
+      </tr>
+    ));
   }
 
   render() {
+    const { text_amt, text_desc } = this.state;
+
     return (
       <div>
         <h1 id='title' style={{ paddingRight: "1em" }}>
@@ -231,8 +105,8 @@ class DatabaseDemo extends Component {
             </tr>
             <tr>
               <td><input type="button" value="ADD" onClick={this.handleButtonClick} /></td>
-              <td><input type="text" name="text_amt" value={this.state.text_amt} onChange={this.handleTextChange} /></td>
-              <td><input type="text" name="text_desc" value={this.state.text_desc} onChange={this.handleTextChange} /></td>
+              <td><input type="text" name="text_amt" value={text_amt} onChange={this.handleTextChange} /></td>
+              <td><input type="text" name="text_desc" value={text_desc} onChange={this.handleTextChange} /></td>
             </tr>
             {this.renderTableData()}
           </tbody>

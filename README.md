@@ -24,7 +24,7 @@ After a `terraform apply` on the `infra` directory, do these manual changes on t
  sudo systemctl restart nginx
  ```
 
-- On the app-tier instance, configure the database.....
+- On the app-tier instance, configure the database..
 ```
  sudo -su ec2-user
  cd ~
