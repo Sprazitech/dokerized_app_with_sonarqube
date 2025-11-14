@@ -3,7 +3,7 @@ This application uses a Terraform to deploy a three tier application
 
 This is an updated code from the original code: [AWS Three Tier Web Architecture Workshop](https://github.com/aws-samples/aws-three-tier-web-architecture-workshop/tree/main)
 
-## Table of Contents
+## Table of Contents.
 - [Application code](#Application-code)
 - [Terraform](#Terraform)
 - [Getting Started](#getting-started)
@@ -24,7 +24,7 @@ After a `terraform apply` on the `infra` directory, do these manual changes on t
  sudo systemctl restart nginx
  ```
 
-- On the app-tier instance, configure the database..
+- On the app-tier instance, configure the database........
 ```
  sudo -su ec2-user
  cd ~
